@@ -1,0 +1,115 @@
+import React, { useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import Captcha from "./Captcha";
+
+const UserLogin = () => {
+  const navigate = useNavigate();
+  const [username, setusername] = useState("");
+  const [password, setPassword] = useState("");
+  const [isCaptchaSuccess, setIsCaptchaSuccess] = useState(false);
+
+  const handleUserLogin = async (event) => {
+    event.preventDefault();
+
+    if (isCaptchaSuccess) {
+      try {
+       
+        const response = await axios.get("http://localhost:8080/login", {
+          username: username,
+          password: password,
+        });
+
+        if (response.data.message === "Login Success") {
+          navigate("/Home"); // Navigate to Home on successful login
+        } else if (response.data.message === "username not exist") {
+          alert("Username does not exist");
+        } else {
+          alert("Incorrect username or password");
+        }
+      } catch (error) {
+        console.error(error);
+        alert("An error occurred during user login");
+      }
+      
+    } else {
+      alert("Please solve the Captcha before attempting login.");
+    }
+    
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center  py-12 px-4 sm:px-6 lg:px-8 bg-cover bg-center" style={{ backgroundImage: `url('https://img.freepik.com/free-photo/doctors-day-handsome-brunette-cute-guy-medical-gown-smiling-showing-good-gesture_140725-162930.jpg?size=626&ext=jpg&ga=GA1.1.528249459.1700570054&semt=ais)` }}>
+    <div className="max-w-md w-full space-y-8">
+      <div>
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">User Login</h2>
+      </div>
+      <form className="mt-8 space-y-6" onSubmit={handleUserLogin}>
+        <div className="rounded-md shadow-sm -space-y-px">
+          <div>
+            <label htmlFor="username" className="sr-only">
+            username address
+            </label>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              autoComplete="username"
+              required
+              className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+              placeholder="username address"
+              value={username}
+              onChange={(e) => setusername(e.target.value)}
+            />
+          </div>
+          <div>
+            <label htmlFor="password" className="sr-only">
+              Password
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <Captcha onSuccess={() => setIsCaptchaSuccess(true)} />
+
+        <div>
+          <button
+            type="submit"
+            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-500 hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            Login
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  );
+};
+
+export default UserLogin;
+
+@RequestMapping(value="/login",method = RequestMethod.GET, headers = "Accept=application/json")
+	public ResponseEntity<String> loginUser(@RequestBody CustomerLogin login) {
+        String username = login.getUsername();
+        String password = login.getPassword();
+ 
+        CustomerLogin validateuser = cserviceimpl.validateUser(username, password);
+        if(validateuser!=null) {
+        	//returns status code 200
+        	return ResponseEntity.ok("Login successfull");
+        }
+        else {
+        	//returns status code 401 unauthorized
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("invalid credintials");
+
+        }
