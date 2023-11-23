@@ -3,15 +3,16 @@ import { Alert, Button, CardActions, CardContent, Divider, TextField } from "@mu
 import RefreshIcon from "@mui/icons-material/Refresh";
 
 const Captcha = ({ onSuccess }) => {
-  const randomString = Math.random().toString(36).slice(8);
-  const [captcha, setCaptcha] = useState(randomString);
+  const generateRandomString = () => Math.random().toString(36).slice(8);
+
+  const [captcha, setCaptcha] = useState(generateRandomString());
   const [text, setText] = useState("");
   const [valid, setValid] = useState(false);
   const [success, setSuccess] = useState(false);
 
   const refreshString = () => {
     setText("");
-    setCaptcha(Math.random().toString(36).slice(8));
+    setCaptcha(generateRandomString());
   };
 
   const matchCaptcha = (event) => {
@@ -19,7 +20,7 @@ const Captcha = ({ onSuccess }) => {
     if (text === captcha) {
       setValid(false);
       setSuccess(true);
-      onSuccess();
+      onSuccess(); // Call the parent component's success handler if needed
     } else {
       setValid(true);
       setSuccess(false);
@@ -28,13 +29,13 @@ const Captcha = ({ onSuccess }) => {
 
   return (
     <>
-      {success && <Alert variant="outlined" sx={{ marginBottom: "50px" }}>Successful</Alert>}
+      {success && <Alert variant="outlined" sx={{ marginBottom: "50px" }}>Captcha Successfully Validated</Alert>}
       <div className="card">
         <Divider />
         <CardContent>
           <CardActions>
             <div className="h3">{captcha}</div>
-            <Button startIcon={<RefreshIcon />} onClick={refreshString}></Button>
+            <Button aria-label="Refresh Captcha" startIcon={<RefreshIcon />} onClick={refreshString}></Button>
           </CardActions>
           <form onSubmit={matchCaptcha}>
             <TextField
@@ -54,3 +55,93 @@ const Captcha = ({ onSuccess }) => {
 };
 
 export default Captcha;
+////
+
+import React, { useState } from "react";
+import Captcha from "./Captcha"; // Assuming your Captcha component file is in the same directory
+
+const UserLogin = () => {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+
+    // Basic validation
+    if (!username || !password) {
+      setError("Please enter both username and password.");
+      return;
+    }
+
+    try {
+      // Add captcha validation here (you might want to adjust the logic based on your backend)
+      // For simplicity, assuming you have a captchaRef to access the captcha component state
+      if (!captchaRef || !captchaRef.current || !captchaRef.current.isSuccess()) {
+        setError("Please solve the captcha before attempting login.");
+        return;
+      }
+
+      // Send login request to the server
+      const response = await fetch("https://your-backend-api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      // Check if the request was successful
+      if (!response.ok) {
+        const { error } = await response.json();
+        throw new Error(error || "Login failed");
+      }
+
+      // Clear previous error
+      setError("");
+
+      // Parse the JSON response
+      const { token } = await response.json();
+
+      // Handle successful login (you might want to redirect or update global state)
+      console.log("Login successful!");
+      console.log("Token:", token);
+    } catch (error) {
+      setError(error.message || "An error occurred during login.");
+    }
+  };
+
+  return (
+    <div>
+      <h2>User Login</h2>
+      <form onSubmit={handleLogin}>
+        <div>
+          <label htmlFor="username">Username:</label>
+          <input
+            type="text"
+            id="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+        </div>
+        <div>
+          <label htmlFor="password">Password:</label>
+          <input
+            type="password"
+            id="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+
+        {/* Add the Captcha component here */}
+        <Captcha ref={captchaRef} onSuccess={() => setError("")} />
+
+        {error && <p style={{ color: "red" }}>{error}</p>}
+        <button type="submit">Login</button>
+      </form>
+    </div>
+  );
+};
+
+export default UserLogin;
